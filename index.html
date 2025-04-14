@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#1a1a2e"> <title>Aethel OS</title>
+
+    <link rel="manifest" href="manifest.json">
+
+    <link rel="icon" href="assets/icons/favicon.ico" sizes="any">
+    <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png"> <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+    <style>
+        /* Apply base font and background */
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            /* Base dark theme */
+            background-color: #0f0f1a; /* Deep dark blue/black */
+            color: #e0e0e0; /* Light grey text */
+            overscroll-behavior: none; /* Prevent pull-to-refresh issues */
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Light theme overrides */
+        body.light-theme {
+            background-color: #f0f0f5; /* Light grey */
+            color: #1a1a2e; /* Dark text */
+        }
+        body.light-theme .themed-bg { background-color: #ffffff; }
+        body.light-theme .themed-text { color: #1a1a2e; }
+        body.light-theme .themed-border { border-color: #d1d1d6; }
+        body.light-theme .themed-button { background-color: #e0e0e5; color: #1a1a2e; border-color: #c1c1c6; }
+        body.light-theme .themed-button:hover { background-color: #d1d1d6; }
+        body.light-theme .themed-input { background-color: #ffffff; border-color: #d1d1d6; color: #1a1a2e; }
+        body.light-theme .themed-link { color: #4a4a8a; }
+        body.light-theme .themed-link:hover { color: #6a6aaf; }
+        body.light-theme .themed-accent-text { color: #6a0dad; } /* Violet */
+        body.light-theme .themed-danger-text { color: #b30000; } /* Crimson */
+
+        /* Dark theme specifics (can be adjusted in Tailwind too) */
+        .themed-bg { background-color: #1a1a2e; transition: background-color 0.3s ease; } /* Dark violet/blue */
+        .themed-text { color: #e0e0e0; transition: color 0.3s ease; }
+        .themed-border { border-color: #4a4a6a; transition: border-color 0.3s ease; }
+        .themed-button {
+            background-color: #2a2a4a; /* Darker violet */
+            color: #e0e0e0;
+            border: 1px solid #4a4a6a;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+            border-radius: 6px; /* Rounded corners */
+            padding: 8px 16px;
+        }
+        .themed-button:hover {
+            background-color: #3a3a5a;
+            border-color: #6a6aaf;
+        }
+        .themed-input {
+            background-color: #101020;
+            border: 1px solid #4a4a6a;
+            color: #e0e0e0;
+            border-radius: 4px; /* Slightly less rounded */
+            padding: 8px 12px;
+            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+        .themed-input:focus {
+             outline: none;
+             border-color: #8a8aff; /* Highlight focus */
+             box-shadow: 0 0 5px rgba(138, 138, 255, 0.3);
+        }
+        .themed-link { color: #aaaaff; transition: color 0.2s ease; } /* Silvery blue */
+        .themed-link:hover { color: #ccccff; }
+        .themed-accent-text { color: #aa00ff; } /* Bright Violet */
+        .themed-danger-text { color: #ff4444; } /* Bright Crimson */
+
+        /* Font families */
+        .font-jetbrains { font-family: 'JetBrains Mono', monospace; }
+        .font-sharetech { font-family: 'Share Tech Mono', monospace; }
+
+        /* Hide scrollbar */
+        ::-webkit-scrollbar { display: none; }
+        body { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Page transition styles */
+        .page {
+            display: none; /* Hidden by default */
+            animation: fadeIn 0.5s ease-out;
+            min-height: calc(100vh - 80px); /* Adjust based on header/footer height */
+        }
+        .page.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Loading Overlay */
+        #loading-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: #0f0f1a;
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease-out;
+        }
+        #loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-left-color: #aa00ff; /* Accent color */
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Red Gate Mode Overlay */
+        #red-gate-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(20, 0, 0, 0.95); /* Deep crimson overlay */
+            z-index: 9990;
+            display: none; /* Hidden by default */
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 20px;
+            text-align: center;
+            color: #ffdddd; /* Light crimson text */
+            animation: fadeInRedGate 1s ease-out;
+        }
+        #red-gate-overlay.active {
+            display: flex;
+        }
+        @keyframes fadeInRedGate {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        #red-gate-mantra {
+            font-size: 1.8em;
+            margin-bottom: 30px;
+            font-family: 'JetBrains Mono', monospace;
+            text-shadow: 0 0 10px #ff4444;
+            animation: pulseMantra 3s infinite ease-in-out;
+        }
+        @keyframes pulseMantra {
+            0%, 100% { opacity: 0.8; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.03); }
+        }
+        #red-gate-exit {
+             margin-top: 40px;
+             background-color: rgba(255, 68, 68, 0.3);
+             border: 1px solid #ff4444;
+             color: #ffdddd;
+        }
+         #red-gate-exit:hover {
+             background-color: rgba(255, 68, 68, 0.5);
+         }
+
+         /* Simple Canvas Style */
+         #sigil-canvas {
+             border: 1px dashed #4a4a6a;
+             cursor: crosshair;
+             touch-action: none; /* Important for mobile drawing */
+         }
+         body.light-theme #sigil-canvas {
+             border-color: #d1d1d6;
+         }
+
+    </style>
+</head>
+<body class="themed-bg themed-text">
+
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="container mx-auto px-4 py-5 max-w-4xl">
+
+        <header class="mb-8">
+            <h1 class="text-3xl font-jetbrains themed-accent-text mb-2">Aethel OS</h1>
+            <nav class="flex flex-wrap gap-x-4 gap-y-2 text-sm themed-link">
+                <a href="#dashboard" class="nav-link">Dashboard</a>
+                <a href="#memory-log" class="nav-link">Memory Log</a>
+                <a href="#skill-tree" class="nav-link">Skill Tree</a>
+                <a href="#sigil-vault" class="nav-link">Sigil Vault</a>
+                <a href="#red-gate" class="nav-link themed-danger-text">Red Gate</a>
+                <a href="#settings" class="nav-link">Settings</a>
+            </nav>
+        </header>
+
+        <main id="page-content">
+            </main>
+
+    </div>
+
+    <template id="page-dashboard">
+        <div class="page p-4 themed-bg rounded-lg border themed-border" id="dashboard">
+            <h2 class="text-2xl font-jetbrains mb-4">Dashboard</h2>
+            <p id="welcome-message" class="mb-4">Loading time...</p>
+            <p id="daily-insight" class="italic text-sm themed-accent-text mb-6">"Loading insight..."</p>
+
+            <div class="mb-6">
+                <label for="daily-ritual" class="block mb-2 font-semibold">Daily Ritual Focus:</label>
+                <textarea id="daily-ritual" rows="3" class="w-full themed-input font-jetbrains" placeholder="Set your intention for today..."></textarea>
+            </div>
+
+            <button id="activate-avatar" class="themed-button font-semibold">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                Activate Avatar State
+            </button>
+            <div id="avatar-effect" class="mt-4 h-2 w-0 bg-gradient-to-r from-violet-500 to-red-500 rounded transition-all duration-1000 ease-out"></div>
+        </div>
+    </template>
+
+    <template id="page-memory-log">
+        <div class="page p-4 themed-bg rounded-lg border themed-border" id="memory-log">
+            <h2 class="text-2xl font-jetbrains mb-4">Fractal Memory Log</h2>
+             <div class="mb-4">
+                <input type="text" id="memory-search" class="w-full themed-input mb-2" placeholder="Search memories...">
+            </div>
+            <div class="mb-6">
+                <label for="memory-entry" class="block mb-2 font-semibold">Record New Memory:</label>
+                <textarea id="memory-entry" rows="4" class="w-full themed-input font-jetbrains mb-2" placeholder="Record dreams, visions, synchronicities..."></textarea>
+                <button id="add-memory" class="themed-button">Log Entry</button>
+            </div>
+            <div id="memory-list" class="space-y-3">
+                <p>No memories logged yet.</p>
+            </div>
+        </div>
+    </template>
+
+    <template id="page-skill-tree">
+        <div class="page p-4 themed-bg rounded-lg border themed-border" id="skill-tree">
+            <h2 class="text-2xl font-jetbrains mb-4">Skill Tree Tracker</h2>
+            <div class="mb-6 border-b themed-border pb-4">
+                <h3 class="text-lg font-semibold mb-2">Add New Skill</h3>
+                <input type="text" id="new-skill-name" class="w-full themed-input mb-2" placeholder="Skill Name (e.g., Lucid Dreaming)">
+                <textarea id="new-skill-desc" rows="2" class="w-full themed-input mb-2" placeholder="Description (e.g., Conscious awareness during dream state)"></textarea>
+                <button id="add-skill" class="themed-button">Add Skill</button>
+            </div>
+            <div id="skill-list" class="space-y-4">
+                <p>No skills defined yet.</p>
+            </div>
+        </div>
+    </template>
+
+    <template id="page-sigil-vault">
+        <div class="page p-4 themed-bg rounded-lg border themed-border" id="sigil-vault">
+            <h2 class="text-2xl font-jetbrains mb-4">Sigil Vault</h2>
+             <p class="text-sm mb-4 italic">Draw sigils directly or upload (upload simulated). Saved as images in local storage.</p>
+            <div class="mb-6 border-b themed-border pb-4">
+                 <h3 class="text-lg font-semibold mb-2">Create New Sigil</h3>
+                 <label for="sigil-name" class="block text-sm mb-1">Sigil Name/Tag:</label>
+                 <input type="text" id="sigil-name" class="w-full themed-input mb-3" placeholder="e.g., Protection, Focus">
+
+                 <div class="mb-3">
+                    <canvas id="sigil-canvas" width="300" height="150" class="themed-bg"></canvas>
+                 </div>
+                 <div class="flex gap-2">
+                     <button id="save-sigil" class="themed-button">Save Sigil</button>
+                     <button id="clear-canvas" class="themed-button">Clear Canvas</button>
+                     <button id="simulate-upload-sigil" class="themed-button opacity-50 cursor-not-allowed" title="Upload functionality not implemented">Simulate Upload</button>
+                 </div>
+            </div>
+
+            <div id="sigil-gallery" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                <p class="col-span-full">No sigils saved yet.</p>
+            </div>
+        </div>
+    </template>
+
+    <template id="page-red-gate">
+         <div class="page p-4 themed-bg rounded-lg border themed-border" id="red-gate">
+            <h2 class="text-2xl font-jetbrains mb-4 themed-danger-text">Red Gate Protocol</h2>
+            <p class="mb-4">Activate for emergency grounding and centering.</p>
+             <div class="mb-4">
+                 <label for="red-gate-mantra-input" class="block mb-2 font-semibold">Personal Mantra:</label>
+                 <input type="text" id="red-gate-mantra-input" class="w-full themed-input font-jetbrains" placeholder="Enter a grounding phrase...">
+             </div>
+            <button id="activate-red-gate" class="themed-button border-red-500 text-red-300 hover:bg-red-900/50 hover:border-red-400 font-semibold">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                Initiate Red Gate
+            </button>
+        </div>
+    </template>
+
+    <template id="page-settings">
+        <div class="page p-4 themed-bg rounded-lg border themed-border" id="settings">
+            <h2 class="text-2xl font-jetbrains mb-4">Settings & Data</h2>
+
+            <div class="mb-6 border-b themed-border pb-4">
+                <h3 class="text-lg font-semibold mb-2">Theme</h3>
+                <button id="toggle-theme" class="themed-button">Toggle Light/Dark Mode</button>
+            </div>
+
+            <div class="mb-6 border-b themed-border pb-4">
+                <h3 class="text-lg font-semibold mb-2">Manage Data</h3>
+                <div class="flex flex-wrap gap-2">
+                    <button id="export-data" class="themed-button">Export Data (JSON)</button>
+                    <label class="themed-button cursor-pointer">
+                        Import Data (JSON)
+                        <input type="file" id="import-data" accept=".json" class="hidden">
+                    </label>
+                </div>
+            </div>
+
+             <div class="mt-8">
+                 <h3 class="text-lg font-semibold mb-2 themed-danger-text">Danger Zone</h3>
+                <button id="clear-data" class="themed-button border-red-500 text-red-300 hover:bg-red-900/50 hover:border-red-400">
+                    Clear All Local Data
+                </button>
+                <p class="text-xs mt-1 themed-danger-text">Warning: This action is irreversible!</p>
+            </div>
+        </div>
+    </template>
+
+    <div id="red-gate-overlay">
+        <div id="red-gate-mantra">Your Mantra Here</div>
+        <p class="text-sm mb-6">Focus on your breath. Feel grounded.</p>
+        <button id="red-gate-exit" class="themed-button">Return to Console</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+
+    <script src="app.js"></script>
+
+</body>
+</html>
