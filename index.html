@@ -40,6 +40,9 @@
         body.light-theme .themed-link:hover { color: #6a6aaf; }
         body.light-theme .themed-accent-text { color: #6a0dad; } /* Violet */
         body.light-theme .themed-danger-text { color: #b30000; } /* Crimson */
+        body.light-theme .xp-bar-fill { background-color: #aa00ff; }
+        body.light-theme .quest-completed { text-decoration: line-through; opacity: 0.6; }
+
 
         /* Dark theme specifics (can be adjusted in Tailwind too) */
         .themed-bg { background-color: #1a1a2e; transition: background-color 0.3s ease; } /* Dark violet/blue */
@@ -52,10 +55,15 @@
             transition: background-color 0.2s ease, border-color 0.2s ease;
             border-radius: 6px; /* Rounded corners */
             padding: 8px 16px;
+            cursor: pointer;
         }
         .themed-button:hover {
             background-color: #3a3a5a;
             border-color: #6a6aaf;
+        }
+         .themed-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
         .themed-input {
             background-color: #101020;
@@ -87,7 +95,7 @@
         .page {
             display: none; /* Hidden by default */
             animation: fadeIn 0.5s ease-out;
-            min-height: calc(100vh - 80px); /* Adjust based on header/footer height */
+            min-height: calc(100vh - 100px); /* Adjust based on header/footer height */
         }
         .page.active {
             display: block;
@@ -177,6 +185,61 @@
              border-color: #d1d1d6;
          }
 
+        /* XP Bar Styles */
+        .xp-bar-container {
+            background-color: #101020; /* Dark background for the bar */
+            border-radius: 4px;
+            overflow: hidden;
+            height: 10px; /* Adjust height */
+            border: 1px solid #4a4a6a;
+        }
+        .xp-bar-fill {
+            height: 100%;
+            background-color: #aa00ff; /* Accent color for fill */
+            border-radius: 3px; /* Slightly smaller radius */
+            transition: width 0.5s ease-out; /* Animate width changes */
+            width: 0%; /* Start at 0, JS will update */
+        }
+
+        /* Quest Styles */
+        .quest-item label {
+            cursor: pointer;
+        }
+        .quest-completed span {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+        .quest-checkbox {
+            margin-right: 8px;
+            accent-color: #aa00ff; /* Style checkbox color */
+            cursor: pointer;
+        }
+
+        /* Level Up Notification */
+        #level-up-notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(170, 0, 255, 0.9); /* Accent color background */
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            z-index: 10000;
+            font-size: 1.1em;
+            font-family: 'JetBrains Mono', monospace;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(170, 0, 255, 0.5);
+            display: none; /* Hidden by default */
+            animation: fadeInOut 3s ease-in-out forwards;
+        }
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translate(-50%, -20px); }
+            15% { opacity: 1; transform: translate(-50%, 0); }
+            85% { opacity: 1; transform: translate(-50%, 0); }
+            100% { opacity: 0; transform: translate(-50%, -20px); }
+        }
+
     </style>
 </head>
 <body class="themed-bg themed-text">
@@ -184,6 +247,8 @@
     <div id="loading-overlay">
         <div class="spinner"></div>
     </div>
+
+    <div id="level-up-notification">Level Up!</div>
 
     <div class="container mx-auto px-4 py-5 max-w-4xl">
 
@@ -196,7 +261,7 @@
                 <a href="#sigil-vault" class="nav-link">Sigil Vault</a>
                 <a href="#red-gate" class="nav-link themed-danger-text">Red Gate</a>
                 <a href="#settings" class="nav-link">Settings</a>
-            </nav>
+                </nav>
         </header>
 
         <main id="page-content">
@@ -210,9 +275,26 @@
             <p id="welcome-message" class="mb-4">Loading time...</p>
             <p id="daily-insight" class="italic text-sm themed-accent-text mb-6">"Loading insight..."</p>
 
+            <div class="mb-6 p-3 border themed-border rounded">
+                <div class="flex justify-between items-center mb-1 text-sm">
+                    <span id="attunement-level" class="font-semibold font-jetbrains">Attunement Level: 1</span>
+                    <span id="xp-display" class="font-jetbrains">XP: 0 / 100</span>
+                </div>
+                <div class="xp-bar-container">
+                    <div id="xp-bar-fill" class="xp-bar-fill"></div>
+                </div>
+            </div>
+
             <div class="mb-6">
                 <label for="daily-ritual" class="block mb-2 font-semibold">Daily Ritual Focus:</label>
                 <textarea id="daily-ritual" rows="3" class="w-full themed-input font-jetbrains" placeholder="Set your intention for today..."></textarea>
+            </div>
+
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold mb-3 font-jetbrains">Phanes' Directives</h3>
+                <div id="daily-quests-list" class="space-y-3">
+                    <p class="italic text-sm themed-text opacity-70">Loading directives...</p>
+                </div>
             </div>
 
             <button id="activate-avatar" class="themed-button font-semibold">
@@ -235,8 +317,8 @@
                 <button id="add-memory" class="themed-button">Log Entry</button>
             </div>
             <div id="memory-list" class="space-y-3">
-                <p>No memories logged yet.</p>
-            </div>
+                <p class="italic text-sm themed-text opacity-70">No memories logged yet.</p>
+                </div>
         </div>
     </template>
 
@@ -250,7 +332,7 @@
                 <button id="add-skill" class="themed-button">Add Skill</button>
             </div>
             <div id="skill-list" class="space-y-4">
-                <p>No skills defined yet.</p>
+                <p class="italic text-sm themed-text opacity-70">No skills defined yet. Add one above.</p>
             </div>
         </div>
     </template>
@@ -258,7 +340,7 @@
     <template id="page-sigil-vault">
         <div class="page p-4 themed-bg rounded-lg border themed-border" id="sigil-vault">
             <h2 class="text-2xl font-jetbrains mb-4">Sigil Vault</h2>
-             <p class="text-sm mb-4 italic">Draw sigils directly or upload (upload simulated). Saved as images in local storage.</p>
+             <p class="text-sm mb-4 italic themed-text opacity-80">Draw sigils directly. Saved as images in local storage.</p>
             <div class="mb-6 border-b themed-border pb-4">
                  <h3 class="text-lg font-semibold mb-2">Create New Sigil</h3>
                  <label for="sigil-name" class="block text-sm mb-1">Sigil Name/Tag:</label>
@@ -270,12 +352,11 @@
                  <div class="flex gap-2">
                      <button id="save-sigil" class="themed-button">Save Sigil</button>
                      <button id="clear-canvas" class="themed-button">Clear Canvas</button>
-                     <button id="simulate-upload-sigil" class="themed-button opacity-50 cursor-not-allowed" title="Upload functionality not implemented">Simulate Upload</button>
                  </div>
             </div>
 
             <div id="sigil-gallery" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                <p class="col-span-full">No sigils saved yet.</p>
+                <p class="col-span-full italic text-sm themed-text opacity-70">No sigils saved yet.</p>
             </div>
         </div>
     </template>
@@ -333,7 +414,5 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
 
-    <script src="app.js"></script>
-
-</body>
+    <script src="app.js"></script> </body>
 </html>
